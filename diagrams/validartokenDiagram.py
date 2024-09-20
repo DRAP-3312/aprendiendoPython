@@ -1,31 +1,33 @@
 from diagrams import Diagram, Cluster
 from diagrams.onprem.client import User
+from diagrams.aws.network import PrivateSubnet
+from diagrams.aws.security import IdentityAndAccessManagementIamAddOn
 from diagrams.custom import Custom
 
-# Ruta a una imagen personalizada para Firebase (puedes usar cualquier imagen o dejarla como texto)
-rutaImgFirebase = "./img/firebase.png"  # Usa una imagen de Firebase si tienes, si no, se puede cambiar por texto
-rutaImgToken = "./img/token.png"  # También puedes poner una imagen para el token, o dejarla como texto
+# Ruta a las imágenes personalizadas
+rutaImgFirebase = "../img/firebase.png"
+rutaImgAutorizado = "../img/autorizado.png"
+rutaImgNoAutorizado = "../img/noautorizado.jpg"
+rutaImgTokenOk = "../img/llaveOk.jpg"
 
-with Diagram("Proceso de Autenticación con Firebase", show=True, graph_attr={"bgcolor": "transparent"}):
-    # Usuario inicia sesión
-    user = User("Usuario")
+with Diagram("Proceso de Autenticación y Verificación de Token", show=True, graph_attr={"bgcolor": "White"}):
+    user = User("Inicio sesión")
+    firebase = Custom("Firebase", rutaImgFirebase)
 
-    # Paso 1: Firebase recibe la solicitud de autenticación (nodo personalizado)
-    firebase = Custom("Firebase", rutaImgFirebase)  # Cambia la imagen si la tienes o usa un texto personalizado
+    token = Custom("Token JWT", rutaImgTokenOk)
 
-    # Paso 2: Firebase responde con un token
-    token = Custom("Token JWT", rutaImgToken)
+    with Cluster("Proceso de Verificación del Token", graph_attr={"bgcolor": "transparent"}):
+        token_split = Custom("Bearer Token Split", rutaImgTokenOk)
 
-    # Paso 3: El sistema valida el token
-    with Cluster("Validación de Token", graph_attr={"bgcolor": "transparent"}):
-        valid_token = Custom("Token Válido", rutaImgToken)
-        invalid_token = Custom("Token Inválido", rutaImgToken)
+        with Cluster("Validación por Firebase", graph_attr={"bgcolor": "transparent"}):
+            valid_token = Custom("Token Válido", rutaImgTokenOk)
+            invalid_token = IdentityAndAccessManagementIamAddOn("Token Inválido")
 
-    # Paso 4: Acceso permitido o denegado
-    authorized = Custom("Acceso Autorizado", rutaImgToken)
-    unauthorized = Custom("Acceso Denegado", rutaImgToken)
+    authorized = Custom("Acceso Autorizado", rutaImgAutorizado)
+    unauthorized = Custom("Acceso Denegado", rutaImgNoAutorizado)
 
-    # Conexiones entre los componentes
-    user >> firebase >> token
-    token >> valid_token >> authorized
-    token >> invalid_token >> unauthorized
+    user >> firebase
+    firebase >> user
+    user >> token >> token_split
+    token_split >> valid_token >> authorized
+    token_split >> invalid_token >> unauthorized
